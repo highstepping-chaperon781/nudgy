@@ -1,8 +1,54 @@
+# macOS
 .DS_Store
-/.build
-/Packages
+.AppleDouble
+.LSOverride
+._*
+
+# Xcode
 xcuserdata/
 DerivedData/
-.swiftpm/
 *.xcodeproj
+*.xcworkspace
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
 Package.resolved
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.p12
+*.key
+
+# Build artifacts
+*.app
+*.dmg
+*.zip
+*.pkg
+*.dSYM.zip
+*.dSYM
+
+# Misc
+*.log
+Thumbs.db

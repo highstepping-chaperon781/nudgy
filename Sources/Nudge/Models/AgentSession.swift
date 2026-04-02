@@ -15,6 +15,7 @@ struct AgentSession: Identifiable, Sendable {
     var pendingPermissions: [PermissionRequest]
     var recentEvents: RingBuffer<HookEvent>
     var stats: SessionStats
+    var tokenUsage: TokenUsage?
 
     /// Whether this session requires user action.
     var isActionRequired: Bool {

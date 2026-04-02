@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   Nudge.app                      │
+│                   Nudgy.app                      │
 │                                                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
 │  │ MenuBarManager│  │  HTTPServer  │  │ PopupManager  │  │
@@ -48,7 +48,7 @@
 ### HTTPServer
 - Listens on `127.0.0.1:9847` (TCP, NWListener)
 - Parses minimal HTTP/1.1 (POST only, JSON body)
-- Validates shared secret token (X-Nudge-Token header)
+- Validates shared secret token (X-Nudgy-Token header)
 - Deserializes JSON into `HookEvent` structs
 - Forwards events to SessionManager
 - Responds with 200 OK immediately (non-blocking)
@@ -106,10 +106,10 @@
 
 ### HookInstaller
 - Reads ~/.claude/settings.json (or creates it)
-- Merges Nudge hooks without overwriting user hooks
+- Merges Nudgy hooks without overwriting user hooks
 - Idempotent: detects existing installation via marker
 - Backup before modify (timestamped .backup files)
-- Clean uninstall: removes only Nudge entries
+- Clean uninstall: removes only Nudgy entries
 
 ## Threading Model
 

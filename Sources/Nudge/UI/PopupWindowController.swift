@@ -9,14 +9,17 @@ final class PopupWindowController {
     private let maxVisible: Int = 3
     private let stackGap: CGFloat = 4
     private let edgePadding: CGFloat = 12
-    private let panelWidth: CGFloat = 240
     private let panelHeight: CGFloat = 46
 
     var onDismiss: ((UUID) -> Void)?
     var onAction: ((NotificationAction) -> Void)?
     var preset: PopupPreset = {
-        PopupPreset(rawValue: UserDefaults.standard.string(forKey: "nudge.popupPreset") ?? "") ?? .minimal
+        PopupPreset(rawValue: UserDefaults.standard.string(forKey: "nudgy.popupPreset") ?? "") ?? .minimal
     }()
+
+    private var slideOffsetX: CGFloat {
+        popupPosition.contains("Left") ? -40 : 40
+    }
 
     func show(_ item: NotificationItem) {
         // Cap visible popups
@@ -27,12 +30,13 @@ final class PopupWindowController {
         }
 
         let panel = createPanel(for: item)
+        let panelSize = panel.frame.size
         activePanels.insert((panel: panel, item: item, id: item.id), at: 0)
         repositionPanels(animated: true)
 
-        // Slide in from right
-        let target = calculatePosition(at: 0)
-        panel.setFrameOrigin(NSPoint(x: target.x + 40, y: target.y))
+        // Slide in from edge
+        let target = calculatePosition(at: 0, panelSize: panelSize)
+        panel.setFrameOrigin(NSPoint(x: target.x + slideOffsetX, y: target.y))
         panel.alphaValue = 0
         panel.orderFrontRegardless()
 
@@ -64,7 +68,7 @@ final class PopupWindowController {
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = reduceMotion ? 0.06 : 0.18
             ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel.animator().setFrameOrigin(NSPoint(x: origin.x + 40, y: origin.y))
+            panel.animator().setFrameOrigin(NSPoint(x: origin.x + slideOffsetX, y: origin.y))
             panel.animator().alphaValue = 0
         }, completionHandler: {
             panel.orderOut(nil)
@@ -89,6 +93,15 @@ final class PopupWindowController {
 
     private var reduceMotion: Bool {
         NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
+    private var panelWidth: CGFloat {
+        switch preset {
+        case .banner: return 320
+        case .glass:  return 280
+        case .card:   return 220
+        default:      return 260
+        }
     }
 
     private func createPanel(for item: NotificationItem) -> NSPanel {
@@ -122,23 +135,51 @@ final class PopupWindowController {
             onAction: { [weak self] action in self?.onAction?(action) },
             preset: preset
         )
-        panel.contentView = NSHostingView(rootView: view)
+        let hostingView = NSHostingView(rootView: view)
+        hostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight)
+        let fittingSize = hostingView.fittingSize
+        panel.setContentSize(NSSize(
+            width: max(panelWidth, fittingSize.width),
+            height: max(panelHeight, fittingSize.height)
+        ))
+        panel.contentView = hostingView
         return panel
     }
 
-    private func calculatePosition(at index: Int) -> NSPoint {
+    private var popupPosition: String {
+        UserDefaults.standard.string(forKey: "nudgy.popupPosition") ?? "topRight"
+    }
+
+    private func calculatePosition(at index: Int, panelSize: NSSize? = nil) -> NSPoint {
         guard let screen = NSScreen.main else { return .zero }
         let visible = screen.visibleFrame
-        let offset = CGFloat(index) * (panelHeight + stackGap)
-        return NSPoint(
-            x: visible.maxX - panelWidth - edgePadding,
-            y: visible.maxY - panelHeight - edgePadding - offset
-        )
+        let w = panelSize?.width ?? panelWidth
+        let h = panelSize?.height ?? panelHeight
+        let offset = CGFloat(index) * (h + stackGap)
+
+        let x: CGFloat
+        let y: CGFloat
+
+        switch popupPosition {
+        case "topLeft":
+            x = visible.minX + edgePadding
+            y = visible.maxY - h - edgePadding - offset
+        case "bottomRight":
+            x = visible.maxX - w - edgePadding
+            y = visible.minY + edgePadding + offset
+        case "bottomLeft":
+            x = visible.minX + edgePadding
+            y = visible.minY + edgePadding + offset
+        default: // topRight
+            x = visible.maxX - w - edgePadding
+            y = visible.maxY - h - edgePadding - offset
+        }
+        return NSPoint(x: x, y: y)
     }
 
     private func repositionPanels(animated: Bool) {
         for (i, entry) in activePanels.enumerated() {
-            let pos = calculatePosition(at: i)
+            let pos = calculatePosition(at: i, panelSize: entry.panel.frame.size)
             if animated && !reduceMotion {
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = 0.22

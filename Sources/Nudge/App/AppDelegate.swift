@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowFocuser: WindowFocuser!
     private var smartSuppressor: SmartSuppressor!
     private var hookInstaller: HookInstaller!
+    private var usageQuotaManager: UsageQuotaManager!
     private var settingsWindow: NSWindow?
     private var settingsObserver: Any?
 
@@ -33,9 +34,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        menuBarManager = MenuBarManager(appState: appState)
+        usageQuotaManager = UsageQuotaManager()
+        if usageQuotaManager.isConfigured {
+            usageQuotaManager.startAutoRefresh()
+        }
+
+        menuBarManager = MenuBarManager(appState: appState, quotaManager: usageQuotaManager)
+
+        // Generate or load auth token for HTTP server authentication
+        let authToken = Self.loadOrGenerateAuthToken()
 
         httpServer = HTTPServer(port: appState.port)
+        httpServer.sharedSecret = authToken
         httpServer.delegate = self
 
         do {
@@ -45,18 +55,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 appState.port = httpServer.actualPort
             }
         } catch {
-            NudgeLogger.shared.log("Failed to start HTTP server: \(error)")
+            NudgyLogger.shared.log("Failed to start HTTP server: \(error)")
         }
 
-        // Install hooks
-        hookInstaller = HookInstaller(port: httpServer.actualPort)
-        if !hookInstaller.isInstalled() {
-            do {
-                try hookInstaller.install()
-                NudgeLogger.shared.log("Hooks installed successfully")
-            } catch {
-                NudgeLogger.shared.log("Failed to install hooks: \(error)")
-            }
+        // Always install/update hooks (idempotent) to ensure token is current
+        hookInstaller = HookInstaller(port: httpServer.actualPort, token: authToken)
+        do {
+            try hookInstaller.install()
+            NudgyLogger.shared.log("Hooks installed successfully")
+        } catch {
+            NudgyLogger.shared.log("Failed to install hooks: \(error)")
         }
 
         // Listen for settings window requests
@@ -77,19 +85,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let settingsView = SettingsView(appState: appState)
+        let settingsView = SettingsView(appState: appState, quotaManager: usageQuotaManager)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 450, height: 340),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        window.title = "Nudge Settings"
+        window.title = "Nudgy Settings"
         window.contentView = NSHostingView(rootView: settingsView)
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow = window
+    }
+
+    // MARK: - Auth Token
+
+    private static let authKeychainService = "com.nudgy.auth"
+    private static let authKeychainAccount = "hookToken"
+
+    /// Load the auth token from Keychain, or generate and store a new one.
+    static func loadOrGenerateAuthToken() -> String {
+        if let existing = KeychainHelper.load(service: authKeychainService, account: authKeychainAccount),
+           !existing.isEmpty {
+            return existing
+        }
+        let token = UUID().uuidString
+        _ = KeychainHelper.save(service: authKeychainService, account: authKeychainAccount, value: token)
+        return token
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -113,10 +137,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menuBarManager.updateIcon()
 
         case .suppress(let reason):
-            NudgeLogger.shared.log("Suppressed: \(reason)")
+            NudgyLogger.shared.log("Suppressed: \(reason)")
 
         case .batch(let groupId):
-            NudgeLogger.shared.log("Batched for session \(groupId)")
+            NudgyLogger.shared.log("Batched for session \(groupId)")
         }
     }
 
@@ -130,7 +154,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .idle:
             style = .success
             title = "Done"
-            message = "Finished working"
+            if let usage = session.tokenUsage {
+                message = "\(usage.formattedTokens) tokens"
+            } else {
+                message = "Finished working"
+            }
         case .waitingPermission:
             style = .warning
             title = escalated ? "Still waiting" : "Permission"
@@ -177,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate: HTTPServerDelegate {
     func httpServer(_ server: HTTPServer, didReceive event: HookEvent) {
-        NudgeLogger.shared.event(
+        NudgyLogger.shared.event(
             event.hookEventName,
             sessionId: event.sessionId,
             matcher: event.matcher,
@@ -219,6 +247,6 @@ extension AppDelegate: HTTPServerDelegate {
     }
 
     func httpServer(_ server: HTTPServer, didEncounterError error: Error) {
-        NudgeLogger.shared.log("HTTP server error: \(error)")
+        NudgyLogger.shared.log("HTTP server error: \(error)")
     }
 }

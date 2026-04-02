@@ -2,16 +2,17 @@ import Cocoa
 import SwiftUI
 import Combine
 
-/// Manages the menubar status item and its dropdown popover.
 @MainActor
 final class MenuBarManager {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover?
     private let appState: AppState
+    private let quotaManager: UsageQuotaManager?
     private var observation: Any?
 
-    init(appState: AppState) {
+    init(appState: AppState, quotaManager: UsageQuotaManager? = nil) {
         self.appState = appState
+        self.quotaManager = quotaManager
         setupStatusItem()
         startObserving()
     }
@@ -19,27 +20,25 @@ final class MenuBarManager {
     func updateIcon() {
         guard let button = statusItem.button else { return }
 
-        let symbolName = appState.statusIcon
         let hasAttention = appState.pendingPermissionCount > 0
             || appState.highestPriorityState == .error
             || appState.highestPriorityState == .waitingInput
-        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Nudge") {
-            let configured = image.withSymbolConfiguration(config) ?? image
-            // Use template mode for normal state (adapts to light/dark menu bar)
-            // Use tinted color only when attention is needed
-            if hasAttention {
-                configured.isTemplate = false
-                button.image = configured
-                button.contentTintColor = NSColor(appState.iconColor)
-            } else {
-                configured.isTemplate = true
-                button.image = configured
-                button.contentTintColor = nil
-            }
+
+        let isActive = appState.highestPriorityState == .active
+        let filled = isActive || hasAttention
+
+        let icon = NudgyIcon.menuBarIcon(filled: filled, badge: hasAttention)
+
+        if hasAttention {
+            icon.isTemplate = false
+            button.image = icon
+            button.contentTintColor = NSColor(appState.iconColor)
+        } else {
+            icon.isTemplate = true
+            button.image = icon
+            button.contentTintColor = nil
         }
 
-        // Badge count
         let pending = appState.pendingPermissionCount
         button.title = pending > 0 ? " \(pending)" : ""
     }
@@ -47,23 +46,17 @@ final class MenuBarManager {
     // MARK: - Private
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(
-            withLength: NSStatusItem.variableLength
-        )
-
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem.button else { return }
         button.action = #selector(togglePopover)
         button.target = self
 
-        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        if let image = NSImage(systemSymbolName: "circle", accessibilityDescription: "Nudge") {
-            image.isTemplate = true
-            button.image = image.withSymbolConfiguration(config) ?? image
-        }
+        let icon = NudgyIcon.menuBarIcon(filled: false)
+        icon.isTemplate = true
+        button.image = icon
     }
 
     private func startObserving() {
-        // Use withObservationTracking to watch AppState changes
         observation = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self = self else { break }
@@ -96,22 +89,18 @@ final class MenuBarManager {
         popover.behavior = .transient
 
         let hostingController = NSHostingController(
-            rootView: MenuBarView(appState: appState, onFocusSession: { session in
-                _ = WindowFocuser().focusSession(session)
-            })
+            rootView: MenuBarView(
+                appState: appState,
+                onFocusSession: { session in _ = WindowFocuser().focusSession(session) },
+                quotaManager: quotaManager
+            )
         )
-        // Let SwiftUI determine the actual height
         hostingController.sizingOptions = .preferredContentSize
         popover.contentViewController = hostingController
 
         if let button = statusItem.button {
-            popover.show(
-                relativeTo: button.bounds,
-                of: button,
-                preferredEdge: .minY
-            )
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
-
         self.popover = popover
     }
 }

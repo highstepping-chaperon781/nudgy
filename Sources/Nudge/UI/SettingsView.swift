@@ -3,6 +3,7 @@ import ServiceManagement
 
 struct SettingsView: View {
     let appState: AppState
+    var quotaManager: UsageQuotaManager?
 
     var body: some View {
         TabView {
@@ -16,7 +17,7 @@ struct SettingsView: View {
                     Label("Notifications", systemImage: "bell")
                 }
 
-            AboutTab(appState: appState)
+            AboutTab(appState: appState, quotaManager: quotaManager)
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
@@ -28,9 +29,9 @@ struct SettingsView: View {
 // MARK: - General Tab
 
 struct GeneralSettingsTab: View {
-    @AppStorage("nudge.port") private var port: Int = 9847
-    @AppStorage("nudge.launchAtLogin") private var launchAtLogin: Bool = false
-    @AppStorage("nudge.popupPosition") private var popupPosition: String = "topRight"
+    @AppStorage("nudgy.port") private var port: Int = 9847
+    @AppStorage("nudgy.launchAtLogin") private var launchAtLogin: Bool = false
+    @AppStorage("nudgy.popupPosition") private var popupPosition: String = "topRight"
 
     var body: some View {
         Form {
@@ -92,7 +93,7 @@ struct GeneralSettingsTab: View {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            NSLog("Nudge: Launch at login error: \(error)")
+            NSLog("Nudgy: Launch at login error: \(error)")
         }
     }
 
@@ -106,10 +107,10 @@ struct GeneralSettingsTab: View {
 // MARK: - Notifications Tab
 
 struct NotificationSettingsTab: View {
-    @AppStorage("nudge.soundEnabled") private var soundEnabled: Bool = true
-    @AppStorage("nudge.soundVolume") private var soundVolume: Double = 0.5
-    @AppStorage("nudge.autoDismissDelay") private var autoDismiss: Double = 6.0
-    @AppStorage("nudge.popupPreset") private var popupPreset: String = PopupPreset.minimal.rawValue
+    @AppStorage("nudgy.soundEnabled") private var soundEnabled: Bool = true
+    @AppStorage("nudgy.soundVolume") private var soundVolume: Double = 0.5
+    @AppStorage("nudgy.autoDismissDelay") private var autoDismiss: Double = 6.0
+    @AppStorage("nudgy.popupPreset") private var popupPreset: String = PopupPreset.minimal.rawValue
 
     private var sampleItem: NotificationItem {
         NotificationItem(
@@ -180,10 +181,12 @@ struct NotificationSettingsTab: View {
 
 struct AboutTab: View {
     let appState: AppState
+    var quotaManager: UsageQuotaManager?
+    @State private var sessionKeyInput: String = ""
 
     var body: some View {
         Form {
-            Section("Nudge") {
+            Section("Nudgy") {
                 LabeledContent("Version", value: Bundle.main.shortVersion)
                 LabeledContent("Server", value: appState.isServerRunning
                     ? "Running on port \(appState.port)"
@@ -192,6 +195,30 @@ struct AboutTab: View {
                 LabeledContent("Active Sessions",
                     value: "\(appState.activeSessionCount)"
                 )
+            }
+
+            if let quotaManager = quotaManager {
+                Section("Claude Quota") {
+                    SecureField("Session Key", text: $sessionKeyInput)
+                        .onAppear { sessionKeyInput = quotaManager.sessionKey ?? "" }
+                        .onChange(of: sessionKeyInput) { _, newValue in
+                            quotaManager.sessionKey = newValue
+                        }
+                    Text("Find at claude.ai → browser cookies → sessionKey")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if quotaManager.isLoading {
+                        ProgressView().controlSize(.small)
+                    } else if let q = quotaManager.quota {
+                        Text("Remaining: \(String(format: "%.0f%%", q.remaining)) (\(q.tier))")
+                            .font(.caption)
+                    } else if let err = quotaManager.error {
+                        Text(err).font(.caption).foregroundStyle(.red)
+                    }
+                    Button("Test Connection") {
+                        Task { await quotaManager.fetchQuota() }
+                    }
+                }
             }
 
             Section("Hooks") {
@@ -211,11 +238,11 @@ struct AboutTab: View {
             }
 
             Section("Logs") {
-                LabeledContent("Path", value: NudgeLogger.shared.logFilePath)
+                LabeledContent("Path", value: NudgyLogger.shared.logFilePath)
                     .textSelection(.enabled)
                 Button("Open in Finder") {
                     NSWorkspace.shared.selectFile(
-                        NudgeLogger.shared.logFilePath,
+                        NudgyLogger.shared.logFilePath,
                         inFileViewerRootedAtPath: ""
                     )
                 }

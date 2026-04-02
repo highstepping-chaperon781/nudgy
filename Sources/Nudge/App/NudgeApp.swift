@@ -1,7 +1,7 @@
 import Cocoa
 
 @main
-struct NudgeApp {
+struct NudgyApp {
     static func main() {
         let app = NSApplication.shared
         let delegate = AppDelegate()

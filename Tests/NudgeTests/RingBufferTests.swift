@@ -1,5 +1,5 @@
 import XCTest
-@testable import Nudge
+@testable import Nudgy
 
 final class RingBufferTests: XCTestCase {
 

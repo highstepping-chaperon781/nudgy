@@ -253,7 +253,7 @@ private struct PresetBanner: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
-                    Text("NUDGE")
+                    Text("NUDGY")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.secondary)
                     Text("now")

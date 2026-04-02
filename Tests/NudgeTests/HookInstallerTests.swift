@@ -1,5 +1,5 @@
 import XCTest
-@testable import Nudge
+@testable import Nudgy
 
 final class HookInstallerTests: XCTestCase {
     private var testDir: URL!
@@ -8,7 +8,7 @@ final class HookInstallerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         testDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("nudge-test-\(UUID().uuidString)")
+            .appendingPathComponent("nudgy-test-\(UUID().uuidString)")
         try! FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
         installer = HookInstaller(port: 9847, settingsDir: testDir)
     }
@@ -47,7 +47,45 @@ final class HookInstallerTests: XCTestCase {
 
         let settings = try installer.readSettings()
         let hooks = settings["hooks"] as? [String: Any]
-        XCTAssertNotNil(hooks?["PreToolUse"], "PreToolUse hook should be preserved")
+        XCTAssertNotNil(hooks?["PreToolUse"], "User's own PreToolUse hook should be preserved")
+    }
+
+    func testInstallCleansUpLegacyNudgyPreToolUseHook() throws {
+        // Simulate a previous Nudgy install that included PreToolUse
+        let existing: [String: Any] = [
+            "hooks": [
+                "PreToolUse": [
+                    ["hooks": [["type": "http", "url": "http://127.0.0.1:9847/event"]]]
+                ]
+            ]
+        ]
+        try writeJSON(existing, to: installer.settingsPath)
+
+        try installer.install()
+
+        let settings = try installer.readSettings()
+        let hooks = settings["hooks"] as? [String: Any]
+        XCTAssertNil(hooks?["PreToolUse"], "Nudgy's legacy PreToolUse hook should be removed")
+    }
+
+    func testInstallCleansUpLegacyButKeepsUserPreToolUseHook() throws {
+        // User has their own command hook AND a legacy Nudgy HTTP hook on PreToolUse
+        let existing: [String: Any] = [
+            "hooks": [
+                "PreToolUse": [
+                    ["hooks": [["type": "command", "command": "echo hello"]]],
+                    ["hooks": [["type": "http", "url": "http://127.0.0.1:9847/event"]]]
+                ]
+            ]
+        ]
+        try writeJSON(existing, to: installer.settingsPath)
+
+        try installer.install()
+
+        let settings = try installer.readSettings()
+        let hooks = settings["hooks"] as? [String: Any]
+        let preToolUseHooks = hooks?["PreToolUse"] as? [[String: Any]]
+        XCTAssertEqual(preToolUseHooks?.count, 1, "Only user's hook should remain")
     }
 
     func testInstallPreservesExistingHooksForSameEvent() throws {
@@ -64,7 +102,7 @@ final class HookInstallerTests: XCTestCase {
 
         let settings = try installer.readSettings()
         let stopHooks = (settings["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]
-        XCTAssertEqual(stopHooks?.count, 2, "Both user hook and Nudge hook should exist")
+        XCTAssertEqual(stopHooks?.count, 2, "Both user hook and Nudgy hook should exist")
     }
 
     func testInstallPreservesNonHookSettings() throws {

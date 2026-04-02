@@ -8,6 +8,9 @@ actor SessionManager {
     private var cleanupTask: Task<Void, Never>?
     private var colorIndex: Int = 0
 
+    /// Maximum number of tracked sessions to prevent memory exhaustion.
+    private static let maxSessions = 100
+
     private static let accentColors: [Color] = [
         .blue, .purple, .orange, .pink, .cyan, .mint, .indigo, .teal
     ]
@@ -42,6 +45,9 @@ actor SessionManager {
 
         case "Stop":
             session.state = .idle
+            if let usage = TranscriptParser.parseUsage(sessionId: sessionId, cwd: event.cwd ?? session.workingDirectory) {
+                session.tokenUsage = usage
+            }
 
         case "Notification":
             let matcher = event.matcher ?? ""
@@ -82,6 +88,11 @@ actor SessionManager {
         session.recentEvents.append(event)
         session.stats.eventCount += 1
         sessions[sessionId] = session
+
+        // Evict oldest stopped sessions if we exceed the cap
+        if sessions.count > Self.maxSessions {
+            evictStaleSessions()
+        }
 
         let updatedSession = session
         await MainActor.run {
@@ -140,6 +151,15 @@ actor SessionManager {
                     appState.updateFromSession(session)
                 }
             }
+        }
+    }
+
+    /// Remove oldest stopped sessions to stay within the session cap.
+    private func evictStaleSessions() {
+        let stopped = sessions.filter { $0.value.state == .stopped }
+            .sorted { $0.value.lastEventAt < $1.value.lastEventAt }
+        for (id, _) in stopped.prefix(sessions.count - Self.maxSessions) {
+            sessions.removeValue(forKey: id)
         }
     }
 

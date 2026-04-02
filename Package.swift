@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Nudge",
+    name: "Nudgy",
     platforms: [.macOS(.v14)],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "Nudge",
+            name: "Nudgy",
             dependencies: [],
             path: "Sources/Nudge",
             resources: [
@@ -15,8 +15,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "NudgeTests",
-            dependencies: ["Nudge"],
+            name: "NudgyTests",
+            dependencies: ["Nudgy"],
             path: "Tests/NudgeTests"
         ),
     ]

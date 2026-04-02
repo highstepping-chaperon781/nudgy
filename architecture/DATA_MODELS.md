@@ -169,19 +169,19 @@ if .show:
 
 ### UserDefaults Keys
 ```
-nudge.port              Int     (default: 9847)
-nudge.soundEnabled      Bool    (default: true)
-nudge.soundVolume       Float   (default: 0.5)
-nudge.suppressThreshold Double  (default: 5.0 seconds)
-nudge.autoDismissDelay  Double  (default: 6.0 seconds)
-nudge.popupPosition     String  (default: "topRight")
-nudge.launchAtLogin     Bool    (default: false)
-nudge.showInAllSpaces   Bool    (default: true)
+nudgy.port              Int     (default: 9847)
+nudgy.soundEnabled      Bool    (default: true)
+nudgy.soundVolume       Float   (default: 0.5)
+nudgy.suppressThreshold Double  (default: 5.0 seconds)
+nudgy.autoDismissDelay  Double  (default: 6.0 seconds)
+nudgy.popupPosition     String  (default: "topRight")
+nudgy.launchAtLogin     Bool    (default: false)
+nudgy.showInAllSpaces   Bool    (default: true)
 ```
 
 ### Keychain
 ```
-com.nudge.sharedSecret  String  (random 32-byte token, hex-encoded)
+com.nudgy.sharedSecret  String  (random 32-byte token, hex-encoded)
 ```
 
 ### File System

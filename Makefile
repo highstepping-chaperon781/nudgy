@@ -1,8 +1,8 @@
 .PHONY: build test clean package sign notarize dmg release run
 
-SCHEME = Nudge
+SCHEME = Nudgy
 BUILD_DIR = .build/release
-APP_NAME = Nudge
+APP_NAME = Nudgy
 APP_BUNDLE = $(BUILD_DIR)/$(APP_NAME).app
 VERSION ?= 0.1.0
 DMG_NAME = $(APP_NAME)-$(VERSION).dmg
@@ -28,9 +28,9 @@ clean:
 package: build
 	mkdir -p $(APP_BUNDLE)/Contents/MacOS
 	mkdir -p $(APP_BUNDLE)/Contents/Resources
-	cp $(BUILD_DIR)/Nudge $(APP_BUNDLE)/Contents/MacOS/
+	cp $(BUILD_DIR)/Nudgy $(APP_BUNDLE)/Contents/MacOS/
 	cp Info.plist $(APP_BUNDLE)/Contents/
-	-cp -r Sources/Nudge/Resources/* $(APP_BUNDLE)/Contents/Resources/ 2>/dev/null
+	-cp -r Sources/Nudgy/Resources/* $(APP_BUNDLE)/Contents/Resources/ 2>/dev/null
 
 # Code sign (requires SIGNING_IDENTITY env var)
 sign: package
@@ -64,7 +64,7 @@ dmg: package
 
 # Run the app (debug build)
 run: debug
-	.build/debug/Nudge
+	.build/debug/Nudgy
 
 # Full release pipeline
 release: test sign dmg

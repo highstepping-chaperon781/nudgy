@@ -13,7 +13,7 @@ final class HTTPServer {
     private(set) var actualPort: UInt16
     private var listener: NWListener?
     private let queue = DispatchQueue(
-        label: "com.nudge.httpserver",
+        label: "com.nudgy.httpserver",
         qos: .userInitiated
     )
     weak var delegate: HTTPServerDelegate?
@@ -199,16 +199,20 @@ final class HTTPServer {
             return
         }
 
-        // Only accept /event path
-        guard request.path == "/event" else {
+        // Only accept /event path (strip query string for comparison)
+        let pathBase = request.path.components(separatedBy: "?").first ?? request.path
+        guard pathBase == "/event" else {
             sendResponse(connection, statusCode: 404, body: nil)
             return
         }
 
-        // Validate token if configured
+        // Validate auth token if configured
         if let secret = sharedSecret, !secret.isEmpty {
-            let token = request.headers["x-nudge-token"] ?? ""
-            guard token == secret else {
+            // Check URL query param (used by Claude Code hooks) or header (API clients)
+            let queryToken = Self.extractQueryParam(from: request.path, key: "token")
+            let headerToken = request.headers["x-nudgy-token"]
+            let providedToken = queryToken ?? headerToken ?? ""
+            guard Self.constantTimeEqual(providedToken, secret) else {
                 sendResponse(connection, statusCode: 401, body: nil)
                 return
             }
@@ -230,6 +234,33 @@ final class HTTPServer {
         }
     }
 
+    // MARK: - Auth Helpers
+
+    /// Constant-time string comparison to prevent timing side-channel attacks.
+    static func constantTimeEqual(_ a: String, _ b: String) -> Bool {
+        let aBytes = Array(a.utf8)
+        let bBytes = Array(b.utf8)
+        guard aBytes.count == bBytes.count else { return false }
+        var result: UInt8 = 0
+        for i in 0..<aBytes.count {
+            result |= aBytes[i] ^ bBytes[i]
+        }
+        return result == 0
+    }
+
+    /// Extract a query parameter value from a URL path string.
+    static func extractQueryParam(from path: String, key: String) -> String? {
+        guard let queryStart = path.firstIndex(of: "?") else { return nil }
+        let queryString = String(path[path.index(after: queryStart)...])
+        for pair in queryString.split(separator: "&") {
+            let kv = pair.split(separator: "=", maxSplits: 1)
+            if kv.count == 2 && String(kv[0]) == key {
+                return String(kv[1])
+            }
+        }
+        return nil
+    }
+
     private func sendResponse(_ connection: NWConnection, statusCode: Int, body: Data?) {
         let statusText: String
         switch statusCode {
@@ -247,6 +278,9 @@ final class HTTPServer {
         response += "Content-Type: application/json\r\n"
         response += "Content-Length: \(bodyData.count)\r\n"
         response += "Connection: close\r\n"
+        // CORS: reject cross-origin requests from browsers
+        response += "Access-Control-Allow-Origin: null\r\n"
+        response += "Access-Control-Allow-Methods: POST\r\n"
         response += "\r\n"
 
         var responseData = response.data(using: .utf8)!

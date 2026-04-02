@@ -20,26 +20,33 @@ enum HookInstallerError: Error, LocalizedError {
     }
 }
 
-/// Installs and manages Nudge hooks in ~/.claude/settings.json.
+/// Installs and manages Nudgy hooks in ~/.claude/settings.json.
 final class HookInstaller {
     static let hookedEvents = [
         "Stop",
         "Notification",
         "StopFailure",
         "SessionStart",
-        "PreToolUse",
         "PermissionRequest",
         "SessionEnd",
     ]
 
+    /// Events that were hooked in previous versions but are no longer needed.
+    /// These are cleaned up during install to avoid error spam when Nudgy isn't running.
+    private static let legacyEvents = [
+        "PreToolUse",
+    ]
+
     let port: UInt16
+    let token: String?
     let claudeDir: URL
     let settingsPath: URL
 
     private static let maxBackups = 5
 
-    init(port: UInt16 = 9847, settingsDir: URL? = nil) {
+    init(port: UInt16 = 9847, token: String? = nil, settingsDir: URL? = nil) {
         self.port = port
+        self.token = token
         let dir = settingsDir ?? FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude")
         self.claudeDir = dir
@@ -63,7 +70,10 @@ final class HookInstaller {
         var settings = try readSettings()
         var hooks = settings["hooks"] as? [String: Any] ?? [:]
 
-        let hookURL = "http://127.0.0.1:\(port)/event"
+        var hookURL = "http://127.0.0.1:\(port)/event"
+        if let token = token, !token.isEmpty {
+            hookURL += "?token=\(token)"
+        }
 
         for eventType in Self.hookedEvents {
             var eventHooks = hooks[eventType] as? [[String: Any]] ?? []
@@ -90,12 +100,29 @@ final class HookInstaller {
             hooks[eventType] = eventHooks
         }
 
+        // Remove legacy hooks from previous Nudgy versions
+        for legacyEvent in Self.legacyEvents {
+            guard var eventHooks = hooks[legacyEvent] as? [[String: Any]] else { continue }
+            eventHooks.removeAll { group in
+                guard let hooksList = group["hooks"] as? [[String: Any]] else { return false }
+                return hooksList.contains { hook in
+                    guard let url = hook["url"] as? String else { return false }
+                    return url.contains("127.0.0.1") && url.contains("/event")
+                }
+            }
+            if eventHooks.isEmpty {
+                hooks.removeValue(forKey: legacyEvent)
+            } else {
+                hooks[legacyEvent] = eventHooks
+            }
+        }
+
         settings["hooks"] = hooks
         try writeSettings(settings)
         try pruneBackups()
     }
 
-    /// Remove only Nudge hooks from settings.json.
+    /// Remove only Nudgy hooks from settings.json.
     func uninstall() throws {
         guard FileManager.default.fileExists(atPath: settingsPath.path) else { return }
 

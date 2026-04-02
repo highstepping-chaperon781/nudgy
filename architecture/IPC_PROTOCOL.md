@@ -1,14 +1,14 @@
-# IPC Protocol — AI Coding Agent ↔ Nudge
+# IPC Protocol — AI Coding Agent ↔ Nudgy
 
 ## Overview
 
 Communication is one-directional: AI coding agent hooks POST JSON to
-Nudge's HTTP server. Nudge responds with 200 OK and
+Nudgy's HTTP server. Nudgy responds with 200 OK and
 processes the event asynchronously.
 
 ## Hook Configuration
 
-Nudge installs the following hooks into `~/.claude/settings.json`:
+Nudgy installs the following hooks into `~/.claude/settings.json`:
 
 ```json
 {
@@ -186,7 +186,7 @@ Connection: close
 
 ## Graceful Degradation
 
-If Nudge is not running, the HTTP POST will fail with connection
+If Nudgy is not running, the HTTP POST will fail with connection
 refused. AI coding agent hooks should handle this gracefully (the `|| true`
 pattern or the hook system's built-in error handling). The hook failure
 must NOT block AI coding agent operation.

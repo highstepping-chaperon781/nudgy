@@ -1,5 +1,5 @@
 import XCTest
-@testable import Nudge
+@testable import Nudgy
 
 final class HTTPServerTests: XCTestCase {
     private var server: HTTPServer!
@@ -191,7 +191,7 @@ final class HTTPServerTests: XCTestCase {
         url.httpMethod = method
         url.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let token = token {
-            url.setValue(token, forHTTPHeaderField: "X-Nudge-Token")
+            url.setValue(token, forHTTPHeaderField: "X-Nudgy-Token")
         }
         if let body = body {
             url.httpBody = body.data(using: .utf8)

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Nudge
+@testable import Nudgy
 
 /// Integration tests verifying cross-component interactions.
 final class IntegrationTests: XCTestCase {
@@ -166,7 +166,7 @@ final class IntegrationTests: XCTestCase {
 
     func testHookInstallAndVerify() throws {
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("nudge-int-\(UUID().uuidString)")
+            .appendingPathComponent("nudgy-int-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: tempDir) }
 
         let installer = HookInstaller(port: 9847, settingsDir: tempDir)
@@ -177,7 +177,7 @@ final class IntegrationTests: XCTestCase {
 
     func testHookInstallUninstallRoundTrip() throws {
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("nudge-int-\(UUID().uuidString)")
+            .appendingPathComponent("nudgy-int-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tempDir) }
 
@@ -199,14 +199,14 @@ final class IntegrationTests: XCTestCase {
         try installer.install()
         var settings = try JSONSerialization.jsonObject(with: Data(contentsOf: settingsPath)) as! [String: Any]
         var hooks = settings["hooks"] as! [String: Any]
-        XCTAssertNotNil(hooks["PreToolUse"])
+        XCTAssertNotNil(hooks["PreToolUse"], "User's own PreToolUse command hook should be preserved")
         XCTAssertNotNil(hooks["Stop"])
         XCTAssertNotNil(settings["permissions"])
 
         try installer.uninstall()
         settings = try JSONSerialization.jsonObject(with: Data(contentsOf: settingsPath)) as! [String: Any]
         hooks = settings["hooks"] as! [String: Any]
-        XCTAssertNotNil(hooks["PreToolUse"])
+        XCTAssertNotNil(hooks["PreToolUse"], "User's own PreToolUse hook should survive uninstall")
         XCTAssertNil(hooks["Stop"])
     }
 

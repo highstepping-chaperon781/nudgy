@@ -1,6 +1,6 @@
 import XCTest
 import SwiftUI
-@testable import Nudge
+@testable import Nudgy
 
 final class SmartSuppressorTests: XCTestCase {
 

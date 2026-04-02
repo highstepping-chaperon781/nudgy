@@ -1,6 +1,6 @@
-# Contributing to Nudge
+# Contributing to Nudgy
 
-Thank you for your interest in contributing to Nudge! This guide will help you get started.
+Thank you for your interest in contributing to Nudgy! This guide will help you get started.
 
 ## Getting Started
 

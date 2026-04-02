@@ -30,7 +30,7 @@ enum SoundEffect: String, CaseIterable, Sendable {
     case info
 
     /// UserDefaults key for this effect's sound choice.
-    var defaultsKey: String { "nudge.sound.\(rawValue)" }
+    var defaultsKey: String { "nudgy.sound.\(rawValue)" }
 
     /// Default sound for this effect type.
     var defaultSound: SoundChoice {
@@ -58,22 +58,22 @@ final class SoundManager: @unchecked Sendable {
     static let shared = SoundManager()
 
     var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: "nudge.soundEnabled") }
-        set { UserDefaults.standard.set(newValue, forKey: "nudge.soundEnabled") }
+        get { UserDefaults.standard.bool(forKey: "nudgy.soundEnabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "nudgy.soundEnabled") }
     }
 
     var volume: Float {
-        get { UserDefaults.standard.float(forKey: "nudge.soundVolume") }
-        set { UserDefaults.standard.set(newValue, forKey: "nudge.soundVolume") }
+        get { UserDefaults.standard.float(forKey: "nudgy.soundVolume") }
+        set { UserDefaults.standard.set(newValue, forKey: "nudgy.soundVolume") }
     }
 
-    private let queue = DispatchQueue(label: "com.nudge.sound")
+    private let queue = DispatchQueue(label: "com.nudgy.sound")
 
     init() {
         // Register defaults
         UserDefaults.standard.register(defaults: [
-            "nudge.soundEnabled": true,
-            "nudge.soundVolume": Float(0.5),
+            "nudgy.soundEnabled": true,
+            "nudgy.soundVolume": Float(0.5),
         ])
     }
 
