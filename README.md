@@ -24,27 +24,18 @@ When you're running an AI coding agent in the background, you don't want to keep
 
 ## Installation
 
+### Download
+
+Grab the latest signed & notarized DMG from [GitHub Releases](https://github.com/Hamma111/nudgy/releases/latest), open it, and drag Nudgy to Applications.
+
 ### From Source
 
 ```bash
-git clone https://github.com/Hamma111/nudge.git
+git clone https://github.com/Hamma111/nudgy.git
 cd nudge
-make build
-```
-
-### Run
-
-```bash
-make run
-```
-
-### Create .app Bundle
-
-```bash
 make package
+open .build/release/Nudgy.app
 ```
-
-The app bundle will be at `.build/release/Nudgy.app`.
 
 ## How It Works
 
