@@ -14,7 +14,7 @@ final class PopupWindowController {
     var onDismiss: ((UUID) -> Void)?
     var onAction: ((NotificationAction) -> Void)?
     var preset: PopupPreset = {
-        PopupPreset(rawValue: UserDefaults.standard.string(forKey: "nudgy.popupPreset") ?? "") ?? .minimal
+        PopupPreset(rawValue: UserDefaults.standard.string(forKey: "nudgy.popupPreset") ?? "") ?? .glass
     }()
 
     private var slideOffsetX: CGFloat {

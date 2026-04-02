@@ -141,6 +141,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch decision {
         case .show, .escalate:
             let item = createNotificationItem(event: event, session: session, escalated: decision == .escalate)
+            guard item.style.isEnabled else {
+                NudgyLogger.shared.log("Notification disabled for style: \(item.style.rawValue)")
+                menuBarManager.updateIcon()
+                return
+            }
             appState.addNotification(item)
             popupController.show(item)
             soundManager.playForStyle(item.style)

@@ -153,8 +153,8 @@ struct MenuBarView: View {
                 NotificationCenter.default.post(name: .openSettings, object: nil)
             }
             .buttonStyle(.plain)
-            .font(.system(size: 11))
-            .foregroundStyle(.primary.opacity(0.5))
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.primary.opacity(0.6))
 
             Spacer()
 
@@ -162,8 +162,8 @@ struct MenuBarView: View {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.plain)
-            .font(.system(size: 11))
-            .foregroundStyle(.primary.opacity(0.35))
+            .font(.system(size: 13))
+            .foregroundStyle(.primary.opacity(0.4))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)

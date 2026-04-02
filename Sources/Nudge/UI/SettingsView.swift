@@ -33,7 +33,12 @@ struct GeneralSettingsTab: View {
     @AppStorage("nudgy.launchAtLogin") private var launchAtLogin: Bool = false
     @AppStorage("nudgy.soundEnabled") private var soundEnabled: Bool = true
     @AppStorage("nudgy.soundVolume") private var soundVolume: Double = 0.5
-    @AppStorage("nudgy.autoDismissDelay") private var autoDismiss: Double = 6.0
+    @AppStorage("nudgy.autoDismissDelay") private var autoDismiss: Double = 3.0
+    @AppStorage("nudgy.notify.success") private var notifySuccess: Bool = true
+    @AppStorage("nudgy.notify.warning") private var notifyWarning: Bool = true
+    @AppStorage("nudgy.notify.question") private var notifyQuestion: Bool = true
+    @AppStorage("nudgy.notify.error") private var notifyError: Bool = true
+    @AppStorage("nudgy.notify.info") private var notifyInfo: Bool = true
 
     var body: some View {
         Form {
@@ -44,14 +49,19 @@ struct GeneralSettingsTab: View {
                     }
             }
 
+            Section("Notifications") {
+                NotificationRow(style: .success, effect: .success, label: "Success", soundEnabled: soundEnabled, isOn: $notifySuccess)
+                NotificationRow(style: .warning, effect: .warning, label: "Warning", soundEnabled: soundEnabled, isOn: $notifyWarning)
+                NotificationRow(style: .question, effect: .question, label: "Question", soundEnabled: soundEnabled, isOn: $notifyQuestion)
+                NotificationRow(style: .error, effect: .error, label: "Error", soundEnabled: soundEnabled, isOn: $notifyError)
+                NotificationRow(style: .info, effect: .info, label: "Info", soundEnabled: soundEnabled, isOn: $notifyInfo)
+            }
+
             Section("Sound") {
                 Toggle("Play sounds", isOn: $soundEnabled)
                 if soundEnabled {
                     Slider(value: $soundVolume, in: 0...1) {
                         Text("Volume")
-                    }
-                    ForEach(SoundEffect.allCases, id: \.rawValue) { effect in
-                        SoundPicker(effect: effect)
                     }
                 }
             }
@@ -120,7 +130,7 @@ struct GeneralSettingsTab: View {
 // MARK: - Appearance Tab
 
 struct AppearanceTab: View {
-    @AppStorage("nudgy.popupPreset") private var popupPreset: String = PopupPreset.minimal.rawValue
+    @AppStorage("nudgy.popupPreset") private var popupPreset: String = PopupPreset.glass.rawValue
     @AppStorage("nudgy.popupPosition") private var popupPosition: String = "topRight"
 
     private var sampleItem: NotificationItem {
@@ -197,10 +207,13 @@ struct AboutTab: View {
 
             // Personal note
             VStack(spacing: 8) {
-                Text("Built by Hammad Ali")
-                    .font(.system(size: 13, weight: .medium))
+                HStack(spacing: 0) {
+                    Text("Built by ")
+                    Link("Hammad Ali", destination: URL(string: "https://github.com/Hamma111")!)
+                }
+                .font(.system(size: 15, weight: .medium))
                 Text("Born from the frustration of missing Claude Code prompts while multitasking. Made with care for developers who run AI agents in the background and need a gentle nudge when it's their turn.")
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
@@ -211,10 +224,10 @@ struct AboutTab: View {
             // Privacy
             HStack(spacing: 4) {
                 Image(systemName: "lock.shield")
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundStyle(.green)
                 Text("Your conversations and code never leave your machine. No telemetry, no analytics, no remote logging. Everything stays local. Code is open-source, feel free to scrutanize.")
-                    .font(.system(size: 10))
+                    .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: 340)
@@ -268,46 +281,65 @@ struct AboutTab: View {
             }
 
             Spacer()
+
+            Button("Quit Nudgy") {
+                NSApplication.shared.terminate(nil)
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 12))
+            .foregroundStyle(.red.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
         .padding()
     }
 }
 
-// MARK: - Sound Picker
+// MARK: - Notification Row
 
-struct SoundPicker: View {
+struct NotificationRow: View {
+    let style: NotificationStyle
     let effect: SoundEffect
-    @AppStorage private var chosen: String
+    let label: String
+    let soundEnabled: Bool
+    @Binding var isOn: Bool
+    @AppStorage private var chosenSound: String
 
-    init(effect: SoundEffect) {
+    init(style: NotificationStyle, effect: SoundEffect, label: String, soundEnabled: Bool, isOn: Binding<Bool>) {
+        self.style = style
         self.effect = effect
-        self._chosen = AppStorage(wrappedValue: effect.defaultSound.rawValue, effect.defaultsKey)
+        self.label = label
+        self.soundEnabled = soundEnabled
+        self._isOn = isOn
+        self._chosenSound = AppStorage(wrappedValue: effect.defaultSound.rawValue, effect.defaultsKey)
     }
 
     var body: some View {
-        HStack {
-            Text(effect.rawValue.capitalized)
-                .font(.system(size: 11))
-                .frame(width: 60, alignment: .leading)
+        HStack(spacing: 8) {
+            Image(systemName: style.icon)
+                .foregroundStyle(isOn ? style.color : .secondary.opacity(0.4))
+                .frame(width: 16)
 
-            Picker("", selection: $chosen) {
-                ForEach(SoundChoice.allCases) { sound in
-                    Text(sound.rawValue).tag(sound.rawValue)
-                }
-            }
-            .labelsHidden()
-            .frame(width: 100)
+            Toggle(label, isOn: $isOn)
 
-            Button {
-                if let choice = SoundChoice(rawValue: chosen) {
-                    SoundManager.shared.playSound(choice)
+            if isOn && soundEnabled {
+                Picker("", selection: $chosenSound) {
+                    ForEach(SoundChoice.allCases) { sound in
+                        Text(sound.rawValue).tag(sound.rawValue)
+                    }
                 }
-            } label: {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 8))
+                .labelsHidden()
+                .frame(width: 90)
+
+                Button {
+                    if let choice = SoundChoice(rawValue: chosenSound) {
+                        SoundManager.shared.playSound(choice)
+                    }
+                } label: {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 8))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 }

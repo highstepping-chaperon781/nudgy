@@ -21,7 +21,7 @@ struct NotificationItem: Identifiable, Sendable {
         message: String,
         style: NotificationStyle,
         timestamp: Date = Date(),
-        autoDismissAfter: TimeInterval? = 6.0,
+        autoDismissAfter: TimeInterval? = 3.0,
         actions: [NotificationAction] = []
     ) {
         self.id = id
@@ -91,6 +91,11 @@ enum NotificationStyle: String, Sendable {
 
     var glowColor: Color {
         color.opacity(0.35)
+    }
+
+    /// Whether this notification style is enabled by the user in Settings.
+    var isEnabled: Bool {
+        UserDefaults.standard.object(forKey: "nudgy.notify.\(rawValue)") as? Bool ?? true
     }
 }
 
