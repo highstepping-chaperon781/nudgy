@@ -58,13 +58,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NudgyLogger.shared.log("Failed to start HTTP server: \(error)")
         }
 
-        // Always install/update hooks (idempotent) to ensure token is current
+        // Install/update hooks unless user explicitly disabled them
         hookInstaller = HookInstaller(port: httpServer.actualPort, token: authToken)
-        do {
-            try hookInstaller.install()
-            NudgyLogger.shared.log("Hooks installed successfully")
-        } catch {
-            NudgyLogger.shared.log("Failed to install hooks: \(error)")
+        if !UserDefaults.standard.bool(forKey: "hooksDisabled") {
+            do {
+                try hookInstaller.install()
+                NudgyLogger.shared.log("Hooks installed successfully")
+            } catch {
+                NudgyLogger.shared.log("Failed to install hooks: \(error)")
+            }
         }
 
         // Listen for settings window requests
@@ -123,6 +125,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         httpServer?.stop()
+        if !UserDefaults.standard.bool(forKey: "hooksDisabled") {
+            try? hookInstaller?.uninstall()
+        }
         Task { await sessionManager.stopCleanupTimer() }
     }
 

@@ -221,6 +221,121 @@ final class HookInstallerTests: XCTestCase {
         XCTAssertTrue(installer.verify())
     }
 
+    // MARK: - Lifecycle Tests (quit cleanup & hooksDisabled flag)
+
+    func testUninstallRemovesAllNudgyHooksCleanly() throws {
+        // Simulate a full Nudgy session: install then uninstall on quit
+        try "{}".data(using: .utf8)!.write(to: installer.settingsPath)
+        try installer.install()
+        XCTAssertTrue(installer.isInstalled())
+
+        // Simulate app quit
+        try installer.uninstall()
+        XCTAssertFalse(installer.isInstalled())
+
+        // Verify settings.json is clean — no leftover hooks key
+        let settings = try installer.readSettings()
+        XCTAssertNil(settings["hooks"], "hooks key should be removed when empty")
+    }
+
+    func testUninstallThenInstallRoundTrip() throws {
+        // Full lifecycle: install → quit (uninstall) → relaunch (install)
+        try "{}".data(using: .utf8)!.write(to: installer.settingsPath)
+
+        // First launch
+        try installer.install()
+        XCTAssertTrue(installer.isInstalled())
+
+        // Quit
+        try installer.uninstall()
+        XCTAssertFalse(installer.isInstalled())
+
+        // Second launch
+        try installer.install()
+        XCTAssertTrue(installer.isInstalled())
+
+        // Verify hooks are correct (not duplicated)
+        let settings = try installer.readSettings()
+        let stopHooks = (settings["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]
+        XCTAssertEqual(stopHooks?.count, 1)
+    }
+
+    func testUninstallPreservesUserHooksAfterQuit() throws {
+        // User has their own hooks — Nudgy quit must not remove them
+        let existing: [String: Any] = [
+            "hooks": [
+                "Stop": [
+                    ["hooks": [["type": "command", "command": "echo my-hook"]]]
+                ]
+            ]
+        ]
+        try writeJSON(existing, to: installer.settingsPath)
+
+        try installer.install()
+
+        let beforeUninstall = try installer.readSettings()
+        let beforeStopHooks = (beforeUninstall["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]
+        XCTAssertEqual(beforeStopHooks?.count, 2, "User + Nudgy hooks")
+
+        // Simulate quit
+        try installer.uninstall()
+
+        let afterUninstall = try installer.readSettings()
+        let afterStopHooks = (afterUninstall["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]
+        XCTAssertEqual(afterStopHooks?.count, 1, "Only user hook should remain")
+
+        // Verify the remaining hook is the user's, not Nudgy's
+        let remainingURL = (afterStopHooks?.first?["hooks"] as? [[String: Any]])?.first?["url"] as? String
+        XCTAssertNil(remainingURL, "User hook uses 'command', not 'url'")
+        let remainingCommand = (afterStopHooks?.first?["hooks"] as? [[String: Any]])?.first?["command"] as? String
+        XCTAssertEqual(remainingCommand, "echo my-hook")
+    }
+
+    func testUninstallOnMissingFileDoesNotThrow() throws {
+        // If settings.json doesn't exist (e.g., user deleted .claude dir), quit shouldn't crash
+        XCTAssertNoThrow(try installer.uninstall())
+    }
+
+    func testMultipleQuickInstallUninstallCycles() throws {
+        // Stress test: rapid install/uninstall cycles shouldn't corrupt the file
+        try "{}".data(using: .utf8)!.write(to: installer.settingsPath)
+
+        for _ in 0..<10 {
+            try installer.install()
+            XCTAssertTrue(installer.isInstalled())
+            try installer.uninstall()
+            XCTAssertFalse(installer.isInstalled())
+        }
+
+        // Final state should be clean
+        let settings = try installer.readSettings()
+        XCTAssertNil(settings["hooks"])
+    }
+
+    func testInstallWithTokenIncludesTokenInURL() throws {
+        let tokenInstaller = HookInstaller(port: 9847, token: "test-secret-123", settingsDir: testDir)
+        try "{}".data(using: .utf8)!.write(to: tokenInstaller.settingsPath)
+        try tokenInstaller.install()
+
+        let settings = try tokenInstaller.readSettings()
+        let stopHooks = (settings["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]
+        let hooksList = stopHooks?.first?["hooks"] as? [[String: Any]]
+        let url = hooksList?.first?["url"] as? String
+        XCTAssertTrue(url?.contains("token=test-secret-123") == true)
+    }
+
+    func testUninstallRemovesTokenizedHooks() throws {
+        let tokenInstaller = HookInstaller(port: 9847, token: "test-secret-123", settingsDir: testDir)
+        try "{}".data(using: .utf8)!.write(to: tokenInstaller.settingsPath)
+        try tokenInstaller.install()
+        XCTAssertTrue(tokenInstaller.isInstalled())
+
+        try tokenInstaller.uninstall()
+        XCTAssertFalse(tokenInstaller.isInstalled())
+        let settings = try tokenInstaller.readSettings()
+        XCTAssertNil(settings["hooks"])
+    }
+
     // MARK: - Helpers
 
     private func writeJSON(_ dict: [String: Any], to url: URL) throws {

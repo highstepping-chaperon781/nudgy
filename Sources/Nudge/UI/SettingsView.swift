@@ -248,11 +248,13 @@ struct AboutTab: View {
 
                 Button("Install Hooks") {
                     try? installer.install()
+                    UserDefaults.standard.set(false, forKey: "hooksDisabled")
                 }
                 .controlSize(.small)
 
                 Button("Uninstall Hooks") {
                     try? installer.uninstall()
+                    UserDefaults.standard.set(true, forKey: "hooksDisabled")
                 }
                 .controlSize(.small)
 
