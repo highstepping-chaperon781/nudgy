@@ -13,9 +13,9 @@ When you're running an AI coding agent in the background, you don't want to keep
 - **Multi-session tracking** — color-coded sessions with state indicators (working, done, waiting, error)
 - **Smart suppression** — avoids notification fatigue during rapid-fire events
 - **Sound alerts** — mapped to event types, fully configurable per-type
-- **Token usage tracking** — parses Claude Code transcripts to show tokens used & estimated cost
-- **Claude quota monitoring** — optional integration to show remaining API usage (requires session key)
+- **Token usage tracking** — parses Claude Code transcripts to show tokens used per session
 - **Zero external dependencies** — built entirely on macOS system frameworks
+- **Fully private** — no telemetry, no analytics, no remote logging. Your conversations and code never leave your machine
 
 ## Requirements
 
@@ -101,13 +101,16 @@ Nudgy is built with SwiftUI + AppKit hybrid using zero external dependencies:
 - **HTTP Server** — `NWListener` (Network.framework) on localhost
 - **Session Manager** — Swift Actor for thread-safe state management
 - **Floating Popups** — `NSPanel` pool (max 3 visible, auto-dismiss, 5 style presets)
-- **Menu Bar** — `NSStatusItem` with dynamic status icon, session dots, quota bar
+- **Menu Bar** — `NSStatusItem` with dynamic status icon and session dots
 - **Smart Suppression** — Rules engine to prevent notification fatigue
-- **Token Tracking** — JSONL transcript parser for per-session token usage & cost
-- **Quota Monitor** — Optional claude.ai API integration for remaining usage
+- **Token Tracking** — JSONL transcript parser for per-session token usage
 - **Window Focus** — Detects active terminal/editor for session focus via "Go" button
 
 See the [architecture](architecture/) directory for detailed design docs.
+
+## Privacy
+
+Nudgy is fully local. Your conversations, code, and session data never leave your machine. There is no telemetry, no analytics, no crash reporting, and no remote logging of any kind. The only network activity is the localhost HTTP server (`127.0.0.1`) that receives hook events from your own Claude Code process. Nothing is sent to the internet.
 
 ## Contributing
 

@@ -208,6 +208,18 @@ struct AboutTab: View {
             }
             .padding(.top, 4)
 
+            // Privacy
+            HStack(spacing: 4) {
+                Image(systemName: "lock.shield")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.green)
+                Text("Your conversations and code never leave your machine. No telemetry, no analytics, no remote logging. Everything stays local. Code is open-source, feel free to scrutanize.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: 340)
+            .padding(.top, 2)
+
             Divider()
                 .padding(.horizontal, 40)
 
