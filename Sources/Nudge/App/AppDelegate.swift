@@ -169,11 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .idle:
             style = .success
             title = "Done"
-            if let usage = session.tokenUsage {
-                message = "\(usage.formattedTokens) tokens"
-            } else {
-                message = "Finished working"
-            }
+            message = session.displayName
         case .waitingPermission:
             style = .warning
             title = escalated ? "Still waiting" : "Permission"
