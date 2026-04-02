@@ -1,16 +1,19 @@
 import SwiftUI
 
 extension Notification.Name {
-    static let openSettings = Notification.Name("com.nudge.openSettings")
+    static let openSettings = Notification.Name("com.nudgy.openSettings")
 }
 
+@MainActor
 struct MenuBarView: View {
     let appState: AppState
     let onFocusSession: ((AgentSession) -> Void)?
+    var quotaManager: UsageQuotaManager?
 
-    init(appState: AppState, onFocusSession: ((AgentSession) -> Void)? = nil) {
+    init(appState: AppState, onFocusSession: ((AgentSession) -> Void)? = nil, quotaManager: UsageQuotaManager? = nil) {
         self.appState = appState
         self.onFocusSession = onFocusSession
+        self.quotaManager = quotaManager
     }
 
     private var activeSessions: [AgentSession] {
@@ -27,6 +30,15 @@ struct MenuBarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Session dots
+            if !activeSessions.isEmpty {
+                SessionDotsView(
+                    sessions: activeSessions,
+                    onTap: { session in onFocusSession?(session) }
+                )
+                thinDivider
+            }
+
             // Attention section
             if !needsAttention.isEmpty {
                 attentionSection
@@ -51,6 +63,12 @@ struct MenuBarView: View {
                 thinDivider
             }
 
+            // Quota
+            if let quota = quotaManager?.quota {
+                QuotaBarView(quota: quota)
+                thinDivider
+            }
+
             // Footer
             footer
         }
@@ -65,9 +83,9 @@ struct MenuBarView: View {
             HStack(spacing: 4) {
                 Circle()
                     .fill(Color(red: 1.0, green: 0.6, blue: 0.15))
-                    .frame(width: 5, height: 5)
+                    .frame(width: 6, height: 6)
                 Text("\(needsAttention.count) need\(needsAttention.count == 1 ? "s" : "") you")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color(red: 1.0, green: 0.6, blue: 0.15))
             }
             .padding(.horizontal, 14)
@@ -101,8 +119,8 @@ struct MenuBarView: View {
             Spacer()
             VStack(spacing: 3) {
                 Text("No active sessions")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.primary.opacity(0.5))
             }
             Spacer()
         }
@@ -114,8 +132,8 @@ struct MenuBarView: View {
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Recent")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.primary.opacity(0.45))
                 .padding(.horizontal, 14)
                 .padding(.top, 8)
                 .padding(.bottom, 4)
@@ -135,8 +153,8 @@ struct MenuBarView: View {
                 NotificationCenter.default.post(name: .openSettings, object: nil)
             }
             .buttonStyle(.plain)
-            .font(.system(size: 10.5))
-            .foregroundStyle(.tertiary)
+            .font(.system(size: 11))
+            .foregroundStyle(.primary.opacity(0.5))
 
             Spacer()
 
@@ -144,8 +162,8 @@ struct MenuBarView: View {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.plain)
-            .font(.system(size: 10.5))
-            .foregroundStyle(.quaternary)
+            .font(.system(size: 11))
+            .foregroundStyle(.primary.opacity(0.35))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -153,7 +171,7 @@ struct MenuBarView: View {
 
     private var thinDivider: some View {
         Rectangle()
-            .fill(.primary.opacity(0.05))
+            .fill(.primary.opacity(0.08))
             .frame(height: 0.5)
             .padding(.horizontal, 10)
     }
@@ -171,17 +189,18 @@ private struct AttentionRow: View {
             HStack(spacing: 6) {
                 Circle()
                     .fill(accentColor)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 7, height: 7)
 
                 Text(session.displayName)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Spacer()
 
                 Text(waitTime)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.primary.opacity(0.5))
             }
 
             // Detail line: what's waiting
@@ -189,39 +208,39 @@ private struct AttentionRow: View {
                 if session.state == .waitingPermission {
                     if let lastPerm = session.pendingPermissions.last {
                         Text(lastPerm.toolName.isEmpty ? "Needs permission" : lastPerm.toolName)
-                            .font(.system(size: 10.5))
-                            .foregroundStyle(accentColor.opacity(0.8))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(accentColor)
 
                         if let cmd = lastPerm.command {
                             Text(" · ")
-                                .foregroundStyle(.quaternary)
-                                .font(.system(size: 10))
+                                .foregroundStyle(.primary.opacity(0.3))
+                                .font(.system(size: 11))
                             Text(cmd.prefix(40) + (cmd.count > 40 ? "..." : ""))
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 10.5, design: .monospaced))
+                                .foregroundStyle(.primary.opacity(0.65))
                                 .lineLimit(1)
                         }
                     } else {
                         Text("Waiting for permission")
-                            .font(.system(size: 10.5))
-                            .foregroundStyle(accentColor.opacity(0.8))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(accentColor)
                     }
                 } else {
                     Text("Has a question")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(accentColor.opacity(0.8))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(accentColor)
                 }
 
                 Spacer()
 
                 Button(action: onFocus) {
                     Text("Go")
-                        .font(.system(size: 9.5, weight: .medium))
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(accentColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2.5)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 3)
                         .background(
-                            Capsule().fill(accentColor.opacity(0.12))
+                            Capsule().fill(accentColor.opacity(0.15))
                         )
                 }
                 .buttonStyle(.plain)
@@ -231,7 +250,7 @@ private struct AttentionRow: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 5)
-                .fill(Color.primary.opacity(hovered ? 0.04 : 0))
+                .fill(Color.primary.opacity(hovered ? 0.06 : 0))
                 .padding(.horizontal, 6)
         )
         .contentShape(Rectangle())
@@ -263,27 +282,34 @@ private struct CompactRow: View {
         HStack(spacing: 7) {
             Circle()
                 .fill(dotColor)
-                .frame(width: 5, height: 5)
+                .frame(width: 6, height: 6)
 
             Text(session.displayName)
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
 
             Spacer()
 
             Text(stateText)
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 11))
+                .foregroundStyle(.primary.opacity(0.55))
+
+            if let usage = session.tokenUsage {
+                Text(usage.formattedTokens)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.primary.opacity(0.45))
+            }
 
             Text(ago)
                 .font(.system(size: 10))
-                .foregroundStyle(.quaternary)
+                .foregroundStyle(.primary.opacity(0.4))
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.primary.opacity(hovered ? 0.03 : 0))
+                .fill(Color.primary.opacity(hovered ? 0.05 : 0))
                 .padding(.horizontal, 6)
         )
         .contentShape(Rectangle())
@@ -326,26 +352,26 @@ private struct RecentRow: View {
         HStack(spacing: 6) {
             Circle()
                 .fill(notification.style.color)
-                .frame(width: 3.5, height: 3.5)
+                .frame(width: 4, height: 4)
 
             Text(notification.title)
-                .font(.system(size: 10.5))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.primary.opacity(0.75))
                 .lineLimit(1)
 
             Text(notification.projectName)
-                .font(.system(size: 10))
-                .foregroundStyle(.quaternary)
+                .font(.system(size: 11))
+                .foregroundStyle(.primary.opacity(0.4))
                 .lineLimit(1)
 
             Spacer()
 
             Text(ago)
-                .font(.system(size: 9.5))
-                .foregroundStyle(.quaternary)
+                .font(.system(size: 10))
+                .foregroundStyle(.primary.opacity(0.35))
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 2.5)
+        .padding(.vertical, 3)
     }
 
     private var ago: String {
@@ -354,5 +380,90 @@ private struct RecentRow: View {
         if s < 60 { return "\(Int(s))s" }
         if s < 3600 { return "\(Int(s / 60))m" }
         return "\(Int(s / 3600))h"
+    }
+}
+
+// MARK: - Session Dots
+
+struct SessionDotsView: View {
+    let sessions: [AgentSession]
+    let onTap: ((AgentSession) -> Void)?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(sessions) { session in
+                SessionDotBar(session: session)
+                    .onTapGesture { onTap?(session) }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+    }
+}
+
+private struct SessionDotBar: View {
+    let session: AgentSession
+    @State private var isBlinking = false
+
+    private var shouldBlink: Bool {
+        session.state == .active || session.isActionRequired
+    }
+
+    private var dotColor: Color {
+        switch session.state {
+        case .active:            return Color(red: 1.0, green: 0.6, blue: 0.15)
+        case .idle:              return Color(red: 0.3, green: 0.8, blue: 0.65)
+        case .waitingPermission: return Color(red: 1.0, green: 0.6, blue: 0.15)
+        case .waitingInput:      return Color(red: 1.0, green: 0.78, blue: 0.3)
+        case .error:             return Color(red: 1.0, green: 0.35, blue: 0.25)
+        case .stopped:           return Color(red: 0.35, green: 0.35, blue: 0.35)
+        }
+    }
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 1.5)
+            .fill(dotColor)
+            .frame(width: 16, height: 4)
+            .opacity(shouldBlink ? (isBlinking ? 1.0 : 0.4) : 0.7)
+            .onAppear {
+                guard shouldBlink else { return }
+                withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+                    isBlinking = true
+                }
+            }
+            .help(session.displayName)
+    }
+}
+
+// MARK: - Quota Bar
+
+private struct QuotaBarView: View {
+    let quota: UsageQuota
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(quota.tier.capitalized)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.primary.opacity(0.5))
+                Spacer()
+                Text(String(format: "%.0f%% remaining", quota.remaining))
+                    .font(.system(size: 10))
+                    .foregroundStyle(quota.color)
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color.primary.opacity(0.1))
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(quota.color)
+                        .frame(width: geo.size.width * (quota.remaining / 100))
+                }
+            }
+            .frame(height: 3)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
     }
 }

@@ -64,7 +64,7 @@ final class SmartSuppressor {
 
     private func recentEventsCount(for sessionId: String, within window: TimeInterval) -> Int {
         let cutoff = Date().addingTimeInterval(-window)
-        return recentEvents.count { $0.sessionId == sessionId && $0.time > cutoff }
+        return recentEvents.filter { $0.sessionId == sessionId && $0.time > cutoff }.count
     }
 
     private func checkEscalation(session: AgentSession) -> SuppressionDecision {
