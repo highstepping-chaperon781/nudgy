@@ -30,6 +30,7 @@ package: build
 	mkdir -p $(APP_BUNDLE)/Contents/Resources
 	cp $(BUILD_DIR)/Nudgy $(APP_BUNDLE)/Contents/MacOS/
 	cp Info.plist $(APP_BUNDLE)/Contents/
+	echo -n "APPL????" > $(APP_BUNDLE)/Contents/PkgInfo
 	-cp -r Sources/Nudgy/Resources/* $(APP_BUNDLE)/Contents/Resources/ 2>/dev/null
 
 # Code sign (requires SIGNING_IDENTITY env var)
